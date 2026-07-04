@@ -166,12 +166,11 @@ async function renderFiles(folderId, folderName) {
 
 async function openViewer(fileId, fileName, startPage) {
   showView("viewer");
-  document.getElementById("addWhiteboardPageBtn").classList.add("hidden");
   const stage = document.getElementById("pdfStage");
   try {
     await PDFViewer.open(fileId, stage, {
       startPage,
-      onPageChange: (page) => saveLastOpen(fileId, fileName, page),
+      onPageChange: (entry, pos) => saveLastOpen(fileId, fileName, pos),
     });
     ActiveViewer = PDFViewer;
     App.refreshToolbarState();
@@ -184,7 +183,6 @@ async function openViewer(fileId, fileName, startPage) {
 function openWhiteboard() {
   showView("viewer");
   isWhiteboardMode = true;
-  document.getElementById("addWhiteboardPageBtn").classList.remove("hidden");
   const stage = document.getElementById("pdfStage");
   Whiteboard.open(stage);
   ActiveViewer = Whiteboard;
@@ -222,8 +220,12 @@ document.getElementById("logoutBtn").addEventListener("click", async () => {
 // ----- Viewer nav buttons -----
 document.getElementById("prevPageBtn").addEventListener("click", () => ActiveViewer && ActiveViewer.prevPage());
 document.getElementById("nextPageBtn").addEventListener("click", () => ActiveViewer && ActiveViewer.nextPage());
-document.getElementById("addWhiteboardPageBtn").addEventListener("click", () => {
-  if (isWhiteboardMode) Whiteboard.addPage();
+document.getElementById("insertPageBtn").addEventListener("click", () => {
+  if (isWhiteboardMode) {
+    Whiteboard.addPage();
+  } else if (ActiveViewer && ActiveViewer.insertBlankPage) {
+    ActiveViewer.insertBlankPage();
+  }
 });
 window.addEventListener("keydown", (e) => {
   if (views.viewer.classList.contains("hidden") || !ActiveViewer) return;

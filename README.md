@@ -141,12 +141,19 @@ Skip this and everything still works, just locally per-device.
 - The bottom toolbar: pen, eraser, four shape tools (line, rectangle, circle, arrow), four
   colors, thickness slider, **undo/redo** (also `Ctrl+Z` / `Ctrl+Shift+Z`), clear page, and
   a pause-drawing toggle.
+- The **+ button** next to the page counter inserts a blank page immediately after the one
+  you're viewing — handy for working through a problem right where you need it, without
+  leaving the document. It stays part of that PDF (saved alongside it), unlike the
+  standalone whiteboard below.
 - The expand icon top-right toggles **fullscreen** (only visible once you're viewing a PDF
   or the whiteboard, not on the home screen) — hides the header, useful when projecting.
-- The **"Board" button** in the header opens a blank whiteboard — not tied to any PDF. Use
-  the **+** next to the page counter to add more blank pages; they're saved between visits.
+- The **"Board" button** in the header opens a separate blank whiteboard — not tied to any
+  PDF, for working through something unrelated to any document. Its own **+** adds more
+  pages; they're saved and stay put between visits.
 - Add new PDFs to any subject folder in Drive and they appear on the site immediately — no
   redeploy needed.
+- Pages render as large as your screen allows (fitting both width and height), rather than
+  a small fixed box — the goal is something closer to a proper full-page reader.
 
 ## Working offline
 

@@ -140,11 +140,10 @@ button{ font-family:inherit; cursor:pointer; }
   display:flex; align-items:center; justify-content:center;
   min-height:calc(100vh - 65px); width:100%; padding:16px 0;
 }
-.pdf-page canvas{ box-shadow:var(--shadow); border-radius:4px; background:#fff; }
-.pdf-page .render-canvas{ position:relative; }
+.pdf-page .render-canvas{ box-shadow:var(--shadow); border-radius:4px; background:#fff; position:relative; }
 .pdf-page .draw-canvas{
-  position:absolute; top:16px; left:50%; transform:translateX(-50%);
-  touch-action:none; border-radius:4px;
+  position:absolute; top:0; left:0;
+  touch-action:none; border-radius:4px; background:transparent;
 }
 
 .viewer-nav{
