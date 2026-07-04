@@ -14,9 +14,6 @@
   // deploy reliably (dashboard-set secrets can get wiped by the GitHub-integration
   // deploy pipeline — see README "Environment variables keep disappearing").
   // Fill in your real folder ID below.
-  "vars": {
-    "ROOT_FOLDER_ID": "PASTE_YOUR_DRIVE_ROOT_FOLDER_ID_HERE"
-  }
 
   // Optional: cross-device pen sync. After creating a KV namespace
   // (Cloudflare dashboard → Storage & Databases → KV → Create), uncomment
