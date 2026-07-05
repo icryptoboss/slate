@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html dir="ltr" lang="en">
+<head>
+  <script>
+    window.onerror = function(msg, src, line, col, err) {
+      fetch('/api/log-error', { method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ message: msg, source: src, lineno: line, colno: col, stack: err?.stack }) }).catch(()=>{});
+      return false;
+    };
+    window.onunhandledrejection = function(e) {
+      fetch('/api/log-error', { method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ message:'Rejection: '+e.reason, source:'Promise', stack: e.reason?.stack }) }).catch(()=>{});
+    };
+  </script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Slate — Digital Teaching Board</title>
+  <meta name="description" content="Private digital teaching board with PDF annotation and whiteboard.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Segoe+UI:wght@400;600&family=Outfit:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="index.css">
+  <script src="/pdf.min.js"></script>
+</head>
+<body>
+
+<!-- Loading overlay -->
+<div id="loading-overlay" class="hidden">
+  <div class="spinner"></div>
+  <span>Loading…</span>
+</div>
+
+<!-- ══════════ LOGIN VIEW ══════════ -->
+<div id="login-view">
+  <div class="login-card">
+    <div class="login-logo">
+      <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect width="48" height="48" rx="8" fill="#006CBE"/>
+        <path d="M12 34V14h8l4 6 4-6h8v20h-6V22l-6 8-6-8v12H12z" fill="white"/>
+      </svg>
+      <h1>Slate Board</h1>
+      <p>Personal Digital Teaching Board</p>
+    </div>
+    <form id="login-form">
+      <label for="pwd-input">Password</label>
+      <div class="pwd-row">
+        <input type="password" id="pwd-input" placeholder="Enter password" autocomplete="current-password">
+        <button type="button" id="pwd-eye" title="Show/hide password">
+          <i class="fa-regular fa-eye"></i>
+        </button>
+      </div>
+      <div id="login-error" class="hidden error-bar">
+        <i class="fa-solid fa-circle-exclamation"></i> Incorrect password. Try again.
+      </div>
+      <button type="submit" class="btn-primary">Sign in</button>
+    </form>
+  </div>
+</div>
+
+<!-- ══════════ APP VIEW ══════════ -->
+<div id="app-view" class="hidden">
+
+  <!-- ─── LIBRARY HEADER ─── -->
+  <header id="lib-header">
+    <div class="lib-header-inner">
+      <div class="lib-brand">
+        <svg width="24" height="24" viewBox="0 0 48 48" fill="none"><rect width="48" height="48" rx="6" fill="#006CBE"/><path d="M12 34V14h8l4 6 4-6h8v20h-6V22l-6 8-6-8v12H12z" fill="white"/></svg>
+        <span id="logo-btn">Slate Board</span>
+      </div>
+      <nav id="breadcrumbs"></nav>
+      <div class="lib-header-right">
+        <span id="sync-badge" class="sync-badge">
+          <i class="fa-solid fa-circle-check"></i><span>Connected</span>
+        </span>
+        <button id="whiteboard-btn" class="hdr-btn">
+          <i class="fa-solid fa-pen-to-square"></i> New Whiteboard
+        </button>
+        <button id="lock-btn" class="hdr-btn icon-only" title="Lock session">
+          <i class="fa-solid fa-lock"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ─── LIBRARY VIEW ─── -->
+  <main id="library-view">
+    <div class="lib-content">
+
+      <!-- Continue card -->
+      <section id="continue-section" class="hidden">
+        <div id="continue-card">
+          <div class="continue-icon"><i class="fa-regular fa-clock"></i></div>
+          <div class="continue-info">
+            <span class="continue-label">Continue reading</span>
+            <strong id="resume-name">—</strong>
+            <span id="resume-detail" class="continue-sub">—</span>
+          </div>
+          <button id="resume-btn">
+            <i class="fa-solid fa-arrow-right"></i> Resume
+          </button>
+        </div>
+      </section>
+
+      <section class="lib-section">
+        <h2 id="lib-title">Subjects</h2>
+        <div id="lib-grid" class="lib-grid"></div>
+      </section>
+    </div>
+  </main>
+
+  <!-- ─── BOARD VIEW ─── -->
+  <main id="board-view" class="hidden">
+
+    <!-- ACTIVE TOOL INDICATOR (thin bar above toolbar) -->
+    <div id="tool-indicator"></div>
+
+    <!-- SCROLLABLE PAGE STACK -->
+    <div id="page-scroll-area">
+      <div id="page-stack"></div>
+    </div>
+
+    <!-- BOTTOM TOOLBAR -->
+    <div id="pdf-toolbar">
+
+      <!-- LEFT GROUP -->
+      <div class="tb-group" id="tb-left">
+        <button id="back-btn" class="tb-btn" title="Back to library">
+          <i class="fa-solid fa-arrow-left"></i>
+        </button>
+        <div class="tb-sep"></div>
+        <span id="doc-title" class="tb-doc-title"></span>
+      </div>
+
+      <!-- CENTER GROUP: Navigation + Drawing tools -->
+      <div class="tb-group tb-center">
+
+        <!-- Page navigation -->
+        <button id="btn-prev" class="tb-btn" title="Previous page">
+          <i class="fa-solid fa-chevron-up"></i>
+        </button>
+        <div class="page-indicator">
+          <input id="page-input" type="number" min="1" value="1" title="Current page">
+          <span class="page-slash">/</span>
+          <span id="total-pages">—</span>
+        </div>
+        <button id="btn-next" class="tb-btn" title="Next page">
+          <i class="fa-solid fa-chevron-down"></i>
+        </button>
+
+        <div class="tb-sep"></div>
+
+        <!-- Zoom controls -->
+        <button class="tb-btn" id="btn-zoom-out" title="Zoom out (-)">
+          <i class="fa-solid fa-magnifying-glass-minus"></i>
+        </button>
+        <span id="zoom-level" class="zoom-level-label">100%</span>
+        <button class="tb-btn" id="btn-zoom-in" title="Zoom in (+)">
+          <i class="fa-solid fa-magnifying-glass-plus"></i>
+        </button>
+        <button class="tb-btn" id="btn-fit-width" title="Fit to width">
+          <i class="fa-solid fa-arrows-left-right"></i>
+        </button>
+
+        <div class="tb-sep"></div>
+
+        <!-- Mode toggle -->
+        <button class="tb-btn mode-btn active" id="tool-select" data-mode="select" title="Pan / Scroll (V)">
+          <i class="fa-solid fa-hand-pointer"></i>
+        </button>
+        <button class="tb-btn mode-btn" id="tool-draw" data-mode="draw" title="Draw (D)">
+          <i class="fa-solid fa-pencil"></i>
+        </button>
+
+        <div class="tb-sep"></div>
+
+        <!-- Drawing tools (only visible in draw mode) -->
+        <div id="draw-tools">
+          <button class="tb-btn tool-btn active" data-tool="freehand" title="Pen (P)">
+            <i class="fa-solid fa-pen-nib"></i>
+          </button>
+
+          <button class="tb-btn tool-btn" data-tool="eraser" id="tool-eraser-pixel" title="Erase by Point (E)">
+            <i class="fa-solid fa-eraser"></i>
+          </button>
+          <button class="tb-btn tool-btn" data-tool="object-eraser" id="tool-eraser-object" title="Erase by Stroke (O)">
+            <i class="fa-solid fa-wand-magic-sparkles"></i>
+          </button>
+
+          <div class="tb-sep"></div>
+
+          <button class="tb-btn tool-btn" data-tool="line" title="Line">
+            <i class="fa-solid fa-minus"></i>
+          </button>
+          <button class="tb-btn tool-btn" data-tool="rect" title="Rectangle">
+            <i class="fa-regular fa-square"></i>
+          </button>
+          <button class="tb-btn tool-btn" data-tool="ellipse" title="Circle">
+            <i class="fa-regular fa-circle"></i>
+          </button>
+          <button class="tb-btn tool-btn" data-tool="arrow" title="Arrow">
+            <i class="fa-solid fa-arrow-right-long"></i>
+          </button>
+
+          <div class="tb-sep"></div>
+
+          <!-- Ink colors -->
+          <div class="color-palette">
+            <button class="color-btn active" data-color="#FFFFFF" style="background:#FFFFFF" title="White"></button>
+            <button class="color-btn" data-color="#FFFF00" style="background:#FFFF00" title="Yellow"></button>
+            <button class="color-btn" data-color="#FF4444" style="background:#FF4444" title="Red"></button>
+            <button class="color-btn" data-color="#4488FF" style="background:#4488FF" title="Blue"></button>
+            <button class="color-btn" data-color="#44DD88" style="background:#44DD88" title="Green"></button>
+            <button class="color-btn" data-color="#FF8800" style="background:#FF8800" title="Orange"></button>
+            <button class="color-btn" data-color="#000000" style="background:#000000; border-color:#555" title="Black"></button>
+          </div>
+
+          <div class="tb-sep"></div>
+
+          <!-- Stroke size -->
+          <div class="stroke-wrap">
+            <i class="fa-solid fa-circle" style="font-size:5px;color:#888"></i>
+            <input type="range" id="stroke-slider" min="1" max="30" value="4" title="Stroke thickness">
+            <i class="fa-solid fa-circle" style="font-size:12px;color:#888"></i>
+          </div>
+
+          <div class="tb-sep"></div>
+
+          <!-- History -->
+          <button class="tb-btn" id="btn-undo" title="Undo (Ctrl+Z)">
+            <i class="fa-solid fa-rotate-left"></i>
+          </button>
+          <button class="tb-btn" id="btn-redo" title="Redo (Ctrl+Shift+Z)">
+            <i class="fa-solid fa-rotate-right"></i>
+          </button>
+          <button class="tb-btn tb-danger" id="btn-clear" title="Clear page annotations">
+            <i class="fa-solid fa-trash-can"></i>
+          </button>
+        </div>
+
+      </div>
+
+      <!-- RIGHT GROUP -->
+      <div class="tb-group" id="tb-right">
+        <button class="tb-btn" id="btn-add-page" title="Insert blank page after current page">
+          <i class="fa-solid fa-file-circle-plus"></i>
+        </button>
+        <button class="tb-btn tb-danger" id="btn-delete-page" title="Delete current visible page">
+          <i class="fa-solid fa-file-circle-minus"></i>
+        </button>
+        <div class="tb-sep"></div>
+        <button class="tb-btn" id="btn-fullscreen" title="Full screen (F)">
+          <i class="fa-solid fa-expand"></i>
+        </button>
+      </div>
+    </div>
+
+  </main>
+
+</div>
+
+<script src="/app.js"></script>
+</body>
+</html>

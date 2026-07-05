@@ -1,0 +1,19 @@
+name = "slate-board"
+main = "worker.js"
+compatibility_date = "2024-03-01"
+
+[assets]
+directory = "./public"
+
+[vars]
+SITE_PASSWORD = "myclass" # Change this or set in wrangler dashboard
+USE_MOCK_DATA = "false"
+GOOGLE_API_KEY = "YOUR_GOOGLE_API_KEY"
+GOOGLE_DRIVE_ROOT_FOLDER_ID = "YOUR_GOOGLE_DRIVE_ROOT_FOLDER_ID"
+
+# Bind a KV Namespace to persist annotations
+# To create it: wrangler kv:namespace create SLATE_ANNOTATIONS
+# Then replace the id here with the generated ID:
+[[kv_namespaces]]
+binding = "SLATE_ANNOTATIONS"
+id = "PASTE_YOUR_KV_NAMESPACE_ID_HERE"
