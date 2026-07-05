@@ -15,5 +15,5 @@ GOOGLE_DRIVE_ROOT_FOLDER_ID = "YOUR_GOOGLE_DRIVE_ROOT_FOLDER_ID"
 # To create it: wrangler kv:namespace create SLATE_ANNOTATIONS
 # Then replace the id here with the generated ID:
 [[kv_namespaces]]
-binding = "SLATE_ANNOTATIONS"
+binding = "KV_BINDING"
 id = "ad4e2ccae5404e8ab5617639eb5901c7"
